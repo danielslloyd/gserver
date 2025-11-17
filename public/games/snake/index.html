@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake - DrillSword</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            gap: 1rem;
+        }
+
+        .game-info-bar {
+            display: flex;
+            gap: 2rem;
+            background: var(--surface);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            min-width: 400px;
+            justify-content: space-between;
+        }
+
+        .game-info-item {
+            text-align: center;
+        }
+
+        .game-info-item label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .game-info-item span {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        #game-canvas {
+            border: 2px solid var(--border);
+            background: var(--surface);
+            border-radius: 0.5rem;
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .save-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--surface);
+            border-radius: 0.5rem;
+            min-width: 400px;
+        }
+
+        .save-slots {
+            display: grid;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .save-slot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+        }
+
+        .save-slot-info {
+            flex: 1;
+        }
+
+        .save-slot-empty {
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .game-info-bar, .save-section {
+                min-width: auto;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header id="main-header">
+        <div class="header-content">
+            <a href="/main" style="text-decoration: none; color: inherit;">
+                <h1>DrillSword</h1>
+            </a>
+            <nav id="main-nav">
+                <a href="/games" class="nav-btn">← Back to Games</a>
+                <a href="/settings" class="nav-btn">Settings</a>
+                <button id="auth-btn" class="nav-btn">Login</button>
+            </nav>
+            <div id="user-info" class="hidden">
+                <span id="user-display-name"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Game -->
+    <div class="game-container">
+        <h2>Snake 🐍</h2>
+
+        <div class="game-info-bar">
+            <div class="game-info-item">
+                <label>Score</label>
+                <span id="score">0</span>
+            </div>
+            <div class="game-info-item">
+                <label>High Score</label>
+                <span id="high-score">0</span>
+            </div>
+            <div class="game-info-item">
+                <label>Level</label>
+                <span id="level">1</span>
+            </div>
+        </div>
+
+        <canvas id="game-canvas" width="400" height="400"></canvas>
+
+        <div class="game-controls">
+            <button id="start-btn" class="btn-primary">Start Game</button>
+            <button id="pause-btn" class="btn-secondary" disabled>Pause</button>
+        </div>
+
+        <div class="save-section" id="save-section" style="display: none;">
+            <h3>Save Game</h3>
+            <div class="save-slots" id="save-slots">
+                <!-- Save slots will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification hidden"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Shared Scripts -->
+    <script src="/js/shared/firebase-init.js"></script>
+    <script src="/js/shared/ui-utils.js"></script>
+    <script src="/js/shared/auth-utils.js"></script>
+    <script src="/js/shared/save-utils.js"></script>
+
+    <!-- Game Script -->
+    <script src="snake-game.js"></script>
+</body>
+</html>

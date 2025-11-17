@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notepad - DrillSword</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .notepad-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .notepad-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .notepad-controls input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.75rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .notepad-controls input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        #notepad-textarea {
+            width: 100%;
+            min-height: 500px;
+            padding: 1.5rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        #notepad-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .save-indicator {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .save-indicator.saving {
+            color: var(--primary-color);
+        }
+
+        .save-indicator.saved {
+            color: var(--success);
+        }
+
+        .notes-list {
+            margin-top: 2rem;
+            background: var(--surface);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+
+        .note-item {
+            padding: 1rem;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .note-item:hover {
+            background: var(--surface-light);
+        }
+
+        .note-info h4 {
+            margin-bottom: 0.25rem;
+        }
+
+        .note-info p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header id="main-header">
+        <div class="header-content">
+            <a href="/main" style="text-decoration: none; color: inherit;">
+                <h1>DrillSword</h1>
+            </a>
+            <nav id="main-nav">
+                <a href="/tools" class="nav-btn">← Back to Tools</a>
+                <a href="/settings" class="nav-btn">Settings</a>
+                <button id="auth-btn" class="nav-btn">Login</button>
+            </nav>
+            <div id="user-info" class="hidden">
+                <span id="user-display-name"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notepad -->
+    <div class="notepad-container">
+        <h2>Notepad 📝</h2>
+
+        <div class="notepad-controls">
+            <input type="text" id="note-title" placeholder="Note title...">
+            <button id="save-btn" class="btn-primary" disabled>Save Note</button>
+            <button id="new-btn" class="btn-secondary">New Note</button>
+            <span id="save-indicator" class="save-indicator"></span>
+        </div>
+
+        <textarea id="notepad-textarea" placeholder="Start typing your note here..."></textarea>
+
+        <div class="notes-list" id="notes-list-container" style="display: none;">
+            <h3>My Notes</h3>
+            <div id="notes-list">
+                <!-- Notes will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification hidden"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Shared Scripts -->
+    <script src="/js/shared/firebase-init.js"></script>
+    <script src="/js/shared/ui-utils.js"></script>
+    <script src="/js/shared/auth-utils.js"></script>
+    <script src="/js/shared/save-utils.js"></script>
+
+    <!-- Tool Script -->
+    <script>
+        const TOOL_ID = 'notepad';
+        let currentNoteId = null;
+        let notes = [];
+
+        // Initialize auth
+        sharedAuth.init();
+        sharedAuth.onAuthStateChanged((user) => {
+            const authBtn = document.getElementById('auth-btn');
+            const saveBtn = document.getElementById('save-btn');
+            const notesContainer = document.getElementById('notes-list-container');
+
+            if (user) {
+                authBtn.textContent = 'Logout';
+                authBtn.onclick = handleLogout;
+                updateUserDisplay(user);
+                saveBtn.disabled = false;
+                notesContainer.style.display = 'block';
+                loadNotes();
+            } else {
+                authBtn.textContent = 'Login';
+                authBtn.onclick = () => window.location.href = '/main';
+                updateUserDisplay(null);
+                saveBtn.disabled = true;
+                notesContainer.style.display = 'none';
+            }
+        });
+
+        async function handleLogout() {
+            showLoading(true);
+            const result = await sharedAuth.logout();
+            showLoading(false);
+
+            if (result.success) {
+                showNotification('Logged out successfully', 'success');
+                window.location.href = '/main';
+            }
+        }
+
+        async function loadNotes() {
+            const result = await sharedSaveSystem.getAllSaves();
+
+            if (result.success) {
+                notes = result.saves.filter(s => s.gameId === TOOL_ID);
+                renderNotesList();
+            }
+        }
+
+        function renderNotesList() {
+            const container = document.getElementById('notes-list');
+            container.innerHTML = '';
+
+            if (notes.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">No notes yet. Create your first note!</p>';
+                return;
+            }
+
+            notes.forEach(note => {
+                const item = document.createElement('div');
+                item.className = 'note-item';
+
+                const info = document.createElement('div');
+                info.className = 'note-info';
+
+                const title = document.createElement('h4');
+                title.textContent = note.name;
+                info.appendChild(title);
+
+                const details = document.createElement('p');
+                const preview = note.data.content.substring(0, 50);
+                details.textContent = preview + (note.data.content.length > 50 ? '...' : '');
+                info.appendChild(details);
+
+                item.appendChild(info);
+
+                const actions = document.createElement('div');
+                actions.className = 'note-actions';
+
+                const loadBtn = document.createElement('button');
+                loadBtn.className = 'btn-secondary';
+                loadBtn.textContent = 'Load';
+                loadBtn.style.padding = '0.5rem 1rem';
+                loadBtn.style.fontSize = '0.875rem';
+                loadBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    loadNote(note);
+                };
+                actions.appendChild(loadBtn);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-secondary';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.style.padding = '0.5rem 1rem';
+                deleteBtn.style.fontSize = '0.875rem';
+                deleteBtn.style.background = 'var(--error)';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteNote(note);
+                };
+                actions.appendChild(deleteBtn);
+
+                item.appendChild(actions);
+                container.appendChild(item);
+            });
+        }
+
+        function loadNote(note) {
+            currentNoteId = note.slotId;
+            document.getElementById('note-title').value = note.name;
+            document.getElementById('notepad-textarea').value = note.data.content;
+            showNotification('Note loaded', 'success');
+        }
+
+        async function deleteNote(note) {
+            if (!confirm('Delete this note?')) return;
+
+            showLoading(true);
+            const result = await sharedSaveSystem.deleteSave(TOOL_ID, note.slotId);
+            showLoading(false);
+
+            if (result.success) {
+                showNotification('Note deleted', 'success');
+                loadNotes();
+            } else {
+                showNotification('Failed to delete note', 'error');
+            }
+        }
+
+        async function saveNote() {
+            const title = document.getElementById('note-title').value.trim();
+            const content = document.getElementById('notepad-textarea').value;
+
+            if (!title) {
+                showNotification('Please enter a title', 'error');
+                return;
+            }
+
+            const indicator = document.getElementById('save-indicator');
+            indicator.textContent = 'Saving...';
+            indicator.className = 'save-indicator saving';
+
+            // Use timestamp as slot ID if new note
+            const slotId = currentNoteId !== null ? currentNoteId : Date.now();
+
+            const result = await sharedSaveSystem.saveGame(
+                TOOL_ID,
+                slotId,
+                { content, title },
+                title
+            );
+
+            if (result.success) {
+                currentNoteId = slotId;
+                indicator.textContent = 'Saved!';
+                indicator.className = 'save-indicator saved';
+                setTimeout(() => {
+                    indicator.textContent = '';
+                }, 2000);
+                loadNotes();
+            } else {
+                indicator.textContent = 'Error saving';
+                showNotification('Failed to save note', 'error');
+            }
+        }
+
+        function newNote() {
+            currentNoteId = null;
+            document.getElementById('note-title').value = '';
+            document.getElementById('notepad-textarea').value = '';
+            showNotification('New note created', 'success');
+        }
+
+        // Set up controls
+        document.getElementById('save-btn').onclick = saveNote;
+        document.getElementById('new-btn').onclick = newNote;
+
+        // Auto-save on Ctrl+S
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveNote();
+            }
+        });
+    </script>
+</body>
+</html>

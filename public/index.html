@@ -3,133 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GServer - Multi-Game Platform</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <meta http-equiv="refresh" content="0; url=/main">
+    <title>Redirecting to DrillSword...</title>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-    <!-- Navigation Header -->
-    <header id="main-header">
-        <div class="header-content">
-            <h1>GServer</h1>
-            <nav id="main-nav">
-                <button id="nav-games" class="nav-btn active">Games</button>
-                <button id="nav-profile" class="nav-btn">Profile</button>
-                <button id="logout-btn" class="nav-btn">Logout</button>
-            </nav>
-            <div id="user-info" class="hidden">
-                <span id="user-display-name"></span>
-            </div>
-        </div>
-    </header>
-
-    <!-- Authentication Screen -->
-    <div id="auth-screen" class="screen">
-        <div class="auth-container">
-            <h2>Welcome to GServer</h2>
-            <p>Multi-Game Platform with Cloud Saves</p>
-
-            <div class="auth-tabs">
-                <button id="tab-login" class="tab-btn active">Login</button>
-                <button id="tab-register" class="tab-btn">Register</button>
-            </div>
-
-            <!-- Login Form -->
-            <form id="login-form" class="auth-form">
-                <input type="email" id="login-email" placeholder="Email" required>
-                <input type="password" id="login-password" placeholder="Password" required>
-                <button type="submit" class="btn-primary">Login</button>
-                <div id="login-error" class="error-message"></div>
-            </form>
-
-            <!-- Register Form -->
-            <form id="register-form" class="auth-form hidden">
-                <input type="text" id="register-name" placeholder="Display Name" required>
-                <input type="email" id="register-email" placeholder="Email" required>
-                <input type="password" id="register-password" placeholder="Password (min 6 characters)" required>
-                <input type="password" id="register-confirm" placeholder="Confirm Password" required>
-                <button type="submit" class="btn-primary">Register</button>
-                <div id="register-error" class="error-message"></div>
-            </form>
-        </div>
+    <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 1rem;">
+        <h1>Redirecting to DrillSword...</h1>
+        <p>If you are not redirected automatically, <a href="/main" style="color: var(--primary-color);">click here</a>.</p>
     </div>
-
-    <!-- Game Launcher Screen -->
-    <div id="games-screen" class="screen hidden">
-        <div class="games-container">
-            <h2>Available Games</h2>
-            <div id="games-grid" class="games-grid">
-                <!-- Games will be loaded dynamically -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Game Play Screen -->
-    <div id="game-screen" class="screen hidden">
-        <div class="game-controls">
-            <button id="back-to-games" class="btn-secondary">← Back to Games</button>
-            <h3 id="current-game-title"></h3>
-            <div class="save-controls">
-                <button id="show-saves-btn" class="btn-primary">Saves</button>
-            </div>
-        </div>
-
-        <!-- Save Slots Modal -->
-        <div id="save-slots-modal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Save Slots</h3>
-                    <button id="close-saves-modal" class="close-btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div id="save-slots-container"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Game iframe -->
-        <iframe id="game-iframe" sandbox="allow-scripts allow-forms" allowfullscreen></iframe>
-    </div>
-
-    <!-- User Profile Screen -->
-    <div id="profile-screen" class="screen hidden">
-        <div class="profile-container">
-            <h2>User Profile</h2>
-            <div id="profile-content">
-                <div class="profile-info">
-                    <h3>Account Information</h3>
-                    <p><strong>Display Name:</strong> <span id="profile-name"></span></p>
-                    <p><strong>Email:</strong> <span id="profile-email"></span></p>
-                    <p><strong>Member Since:</strong> <span id="profile-created"></span></p>
-                </div>
-
-                <div class="profile-stats">
-                    <h3>Gaming Stats</h3>
-                    <div id="stats-grid" class="stats-grid">
-                        <!-- Stats will be loaded dynamically -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Loading Spinner -->
-    <div id="loading" class="loading hidden">
-        <div class="spinner"></div>
-    </div>
-
-    <!-- Notification Toast -->
-    <div id="notification" class="notification hidden"></div>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-
-    <!-- App Scripts -->
-    <script src="js/message-handler.js"></script>
-    <script src="js/save-manager.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+        window.location.href = '/main';
+    </script>
 </body>
 </html>

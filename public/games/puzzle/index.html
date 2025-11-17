@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Game - DrillSword</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            gap: 1rem;
+        }
+
+        .game-info-bar {
+            display: flex;
+            gap: 2rem;
+            background: var(--surface);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+        }
+
+        .game-info-item {
+            text-align: center;
+        }
+
+        .game-info-item label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .game-info-item span {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .puzzle-board {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            gap: 4px;
+            background: var(--border);
+            padding: 4px;
+            border-radius: 0.5rem;
+        }
+
+        .puzzle-tile {
+            width: 100px;
+            height: 100px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 0.375rem;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .puzzle-tile:hover:not(.empty) {
+            background: var(--primary-hover);
+            transform: scale(0.95);
+        }
+
+        .puzzle-tile.empty {
+            background: var(--surface);
+            cursor: default;
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header id="main-header">
+        <div class="header-content">
+            <a href="/main" style="text-decoration: none; color: inherit;">
+                <h1>DrillSword</h1>
+            </a>
+            <nav id="main-nav">
+                <a href="/games" class="nav-btn">← Back to Games</a>
+                <a href="/settings" class="nav-btn">Settings</a>
+                <button id="auth-btn" class="nav-btn">Login</button>
+            </nav>
+            <div id="user-info" class="hidden">
+                <span id="user-display-name"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Game -->
+    <div class="game-container">
+        <h2>15 Puzzle 🧩</h2>
+
+        <div class="game-info-bar">
+            <div class="game-info-item">
+                <label>Moves</label>
+                <span id="moves">0</span>
+            </div>
+            <div class="game-info-item">
+                <label>Best</label>
+                <span id="best">--</span>
+            </div>
+        </div>
+
+        <div class="puzzle-board" id="puzzle-board">
+            <!-- Tiles will be generated here -->
+        </div>
+
+        <div class="game-controls">
+            <button id="new-game-btn" class="btn-primary">New Game</button>
+            <button id="solve-btn" class="btn-secondary">Show Solution</button>
+        </div>
+
+        <p style="color: var(--text-secondary); text-align: center; max-width: 400px;">
+            Click on tiles adjacent to the empty space to move them. Arrange the numbers in order from 1-15.
+        </p>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification hidden"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Shared Scripts -->
+    <script src="/js/shared/firebase-init.js"></script>
+    <script src="/js/shared/ui-utils.js"></script>
+    <script src="/js/shared/auth-utils.js"></script>
+    <script src="/js/shared/save-utils.js"></script>
+
+    <!-- Game Script -->
+    <script>
+        const GAME_ID = 'puzzle';
+        let tiles = [];
+        let moves = 0;
+        let bestMoves = null;
+
+        // Initialize auth
+        sharedAuth.init();
+        sharedAuth.onAuthStateChanged((user) => {
+            const authBtn = document.getElementById('auth-btn');
+
+            if (user) {
+                authBtn.textContent = 'Logout';
+                authBtn.onclick = handleLogout;
+                updateUserDisplay(user);
+                loadProgress();
+            } else {
+                authBtn.textContent = 'Login';
+                authBtn.onclick = () => window.location.href = '/main';
+                updateUserDisplay(null);
+            }
+        });
+
+        async function handleLogout() {
+            showLoading(true);
+            const result = await sharedAuth.logout();
+            showLoading(false);
+
+            if (result.success) {
+                showNotification('Logged out successfully', 'success');
+                window.location.href = '/main';
+            }
+        }
+
+        async function loadProgress() {
+            if (!sharedAuth.isAuthenticated()) return;
+
+            const result = await sharedSaveSystem.getProgress(GAME_ID);
+            if (result.success && result.progress) {
+                bestMoves = result.progress.bestMoves;
+                document.getElementById('best').textContent = bestMoves || '--';
+            }
+        }
+
+        async function updateProgress() {
+            if (!sharedAuth.isAuthenticated()) return;
+
+            const progressData = {
+                bestMoves: bestMoves,
+                lastPlayed: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await sharedSaveSystem.updateProgress(GAME_ID, progressData);
+        }
+
+        function initGame() {
+            // Create solved state
+            tiles = Array.from({ length: 15 }, (_, i) => i + 1);
+            tiles.push(0); // 0 represents empty space
+
+            // Shuffle
+            shuffleTiles();
+            moves = 0;
+            updateUI();
+            renderBoard();
+        }
+
+        function shuffleTiles() {
+            // Make 100 random valid moves to ensure solvability
+            for (let i = 0; i < 100; i++) {
+                const emptyIndex = tiles.indexOf(0);
+                const validMoves = getValidMoves(emptyIndex);
+                const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+                [tiles[emptyIndex], tiles[randomMove]] = [tiles[randomMove], tiles[emptyIndex]];
+            }
+        }
+
+        function getValidMoves(emptyIndex) {
+            const row = Math.floor(emptyIndex / 4);
+            const col = emptyIndex % 4;
+            const moves = [];
+
+            if (row > 0) moves.push(emptyIndex - 4); // Up
+            if (row < 3) moves.push(emptyIndex + 4); // Down
+            if (col > 0) moves.push(emptyIndex - 1); // Left
+            if (col < 3) moves.push(emptyIndex + 1); // Right
+
+            return moves;
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('puzzle-board');
+            board.innerHTML = '';
+
+            tiles.forEach((value, index) => {
+                const tile = document.createElement('button');
+                tile.className = 'puzzle-tile';
+                if (value === 0) {
+                    tile.classList.add('empty');
+                } else {
+                    tile.textContent = value;
+                    tile.onclick = () => moveTile(index);
+                }
+                board.appendChild(tile);
+            });
+        }
+
+        function moveTile(index) {
+            const emptyIndex = tiles.indexOf(0);
+            const validMoves = getValidMoves(emptyIndex);
+
+            if (validMoves.includes(index)) {
+                [tiles[emptyIndex], tiles[index]] = [tiles[index], tiles[emptyIndex]];
+                moves++;
+                updateUI();
+                renderBoard();
+
+                if (isSolved()) {
+                    setTimeout(() => {
+                        showNotification(`Puzzle solved in ${moves} moves!`, 'success');
+                        if (bestMoves === null || moves < bestMoves) {
+                            bestMoves = moves;
+                            updateProgress();
+                            document.getElementById('best').textContent = bestMoves;
+                        }
+                    }, 300);
+                }
+            }
+        }
+
+        function isSolved() {
+            for (let i = 0; i < 15; i++) {
+                if (tiles[i] !== i + 1) return false;
+            }
+            return tiles[15] === 0;
+        }
+
+        function updateUI() {
+            document.getElementById('moves').textContent = moves;
+        }
+
+        function showSolution() {
+            tiles = Array.from({ length: 15 }, (_, i) => i + 1);
+            tiles.push(0);
+            renderBoard();
+            showNotification('Showing solution', 'success');
+        }
+
+        // Set up controls
+        document.getElementById('new-game-btn').onclick = initGame;
+        document.getElementById('solve-btn').onclick = showSolution;
+
+        // Start game
+        initGame();
+    </script>
+</body>
+</html>

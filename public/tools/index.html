@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tools - DrillSword</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header id="main-header">
+        <div class="header-content">
+            <a href="/main" style="text-decoration: none; color: inherit;">
+                <h1>DrillSword</h1>
+            </a>
+            <nav id="main-nav">
+                <a href="/main" class="nav-btn">Home</a>
+                <a href="/games" class="nav-btn">Games</a>
+                <a href="/tools" class="nav-btn active">Tools</a>
+                <a href="/settings" class="nav-btn">Settings</a>
+                <button id="auth-btn" class="nav-btn">Login</button>
+            </nav>
+            <div id="user-info" class="hidden">
+                <span id="user-display-name"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tools List -->
+    <div class="games-container">
+        <h2>Available Tools</h2>
+        <div id="tools-grid" class="games-grid">
+            <!-- Tools will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification hidden"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Shared Scripts -->
+    <script src="/js/shared/firebase-init.js"></script>
+    <script src="/js/shared/ui-utils.js"></script>
+    <script src="/js/shared/auth-utils.js"></script>
+
+    <!-- Page Script -->
+    <script>
+        // Initialize auth
+        sharedAuth.init();
+
+        // Handle auth state changes
+        sharedAuth.onAuthStateChanged((user) => {
+            const authBtn = document.getElementById('auth-btn');
+
+            if (user) {
+                authBtn.textContent = 'Logout';
+                authBtn.onclick = handleLogout;
+                updateUserDisplay(user);
+            } else {
+                authBtn.textContent = 'Login';
+                authBtn.onclick = () => window.location.href = '/main';
+                updateUserDisplay(null);
+            }
+        });
+
+        // Logout handler
+        async function handleLogout() {
+            showLoading(true);
+            const result = await sharedAuth.logout();
+            showLoading(false);
+
+            if (result.success) {
+                showNotification('Logged out successfully', 'success');
+                window.location.href = '/main';
+            }
+        }
+
+        // Tools list
+        const tools = [
+            {
+                id: 'notepad',
+                name: 'Notepad',
+                description: 'Simple text editor with cloud sync',
+                category: 'Productivity',
+                emoji: '📝',
+                path: '/tools/notepad'
+            },
+            {
+                id: 'calculator',
+                name: 'Calculator',
+                description: 'Basic calculator for quick calculations',
+                category: 'Utility',
+                emoji: '🔢',
+                path: '/tools/calculator'
+            },
+            {
+                id: 'timer',
+                name: 'Timer',
+                description: 'Countdown timer and stopwatch',
+                category: 'Productivity',
+                emoji: '⏱️',
+                path: '/tools/timer'
+            }
+        ];
+
+        function createToolCard(tool) {
+            const card = document.createElement('div');
+            card.className = 'game-card';
+            card.onclick = () => window.location.href = tool.path;
+
+            const thumbnail = document.createElement('div');
+            thumbnail.className = 'game-thumbnail';
+            thumbnail.textContent = tool.emoji;
+            card.appendChild(thumbnail);
+
+            const info = document.createElement('div');
+            info.className = 'game-info';
+
+            const title = document.createElement('h3');
+            title.textContent = tool.name;
+            info.appendChild(title);
+
+            const description = document.createElement('p');
+            description.textContent = tool.description;
+            info.appendChild(description);
+
+            const meta = document.createElement('div');
+            meta.className = 'game-meta';
+
+            const categoryTag = document.createElement('span');
+            categoryTag.className = 'game-tag';
+            categoryTag.textContent = tool.category;
+            meta.appendChild(categoryTag);
+
+            info.appendChild(meta);
+            card.appendChild(info);
+
+            return card;
+        }
+
+        // Load tools on page load
+        const toolsGrid = document.getElementById('tools-grid');
+        tools.forEach(tool => {
+            toolsGrid.appendChild(createToolCard(tool));
+        });
+    </script>
+</body>
+</html>
