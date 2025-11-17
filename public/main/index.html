@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DrillSword - Games & Tools Platform</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+        }
+
+        .auth-section {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .hero p {
+                font-size: 1rem;
+            }
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header id="main-header">
+        <div class="header-content">
+            <h1>DrillSword</h1>
+            <nav id="main-nav">
+                <a href="/games" class="nav-btn">Games</a>
+                <a href="/tools" class="nav-btn">Tools</a>
+                <a href="/settings" class="nav-btn" id="settings-link">Settings</a>
+                <button id="auth-btn" class="nav-btn">Login</button>
+            </nav>
+            <div id="user-info" class="hidden">
+                <span id="user-display-name"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1>Welcome to DrillSword</h1>
+        <p>Play games, use tools, and save your progress with a single account</p>
+        <div class="hero-buttons">
+            <a href="/games" class="btn-primary">Browse Games</a>
+            <a href="/tools" class="btn-secondary">Explore Tools</a>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🎮</div>
+            <h3>Games</h3>
+            <p>Classic games ready to play in your browser</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛠️</div>
+            <h3>Tools</h3>
+            <p>Useful utilities for everyday tasks</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💾</div>
+            <h3>Cloud Saves</h3>
+            <p>Save your progress and access it anywhere</p>
+        </div>
+    </div>
+
+    <!-- Auth Modal (shown when not logged in) -->
+    <div id="auth-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Sign In</h3>
+                <button id="close-auth-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="auth-tabs">
+                    <button id="tab-login" class="tab-btn active">Login</button>
+                    <button id="tab-register" class="tab-btn">Register</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form">
+                    <input type="email" id="login-email" placeholder="Email" required>
+                    <input type="password" id="login-password" placeholder="Password" required>
+                    <button type="submit" class="btn-primary">Login</button>
+                    <div id="login-error" class="error-message"></div>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="auth-form hidden">
+                    <input type="text" id="register-name" placeholder="Display Name" required>
+                    <input type="email" id="register-email" placeholder="Email" required>
+                    <input type="password" id="register-password" placeholder="Password (min 6 characters)" required>
+                    <input type="password" id="register-confirm" placeholder="Confirm Password" required>
+                    <button type="submit" class="btn-primary">Register</button>
+                    <div id="register-error" class="error-message"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification hidden"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Shared Scripts -->
+    <script src="/js/shared/firebase-init.js"></script>
+    <script src="/js/shared/ui-utils.js"></script>
+    <script src="/js/shared/auth-utils.js"></script>
+
+    <!-- Page Script -->
+    <script>
+        // Initialize auth
+        sharedAuth.init();
+
+        // Handle auth state changes
+        sharedAuth.onAuthStateChanged((user) => {
+            const authBtn = document.getElementById('auth-btn');
+            const settingsLink = document.getElementById('settings-link');
+
+            if (user) {
+                authBtn.textContent = 'Logout';
+                authBtn.onclick = handleLogout;
+                updateUserDisplay(user);
+            } else {
+                authBtn.textContent = 'Login';
+                authBtn.onclick = showAuthModal;
+                updateUserDisplay(null);
+            }
+        });
+
+        // Show/hide auth modal
+        function showAuthModal() {
+            document.getElementById('auth-modal').classList.remove('hidden');
+        }
+
+        function hideAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            // Reset forms
+            document.getElementById('login-form').reset();
+            document.getElementById('register-form').reset();
+            document.getElementById('login-error').textContent = '';
+            document.getElementById('register-error').textContent = '';
+        }
+
+        document.getElementById('close-auth-modal').onclick = hideAuthModal;
+
+        // Tab switching
+        document.getElementById('tab-login').onclick = () => showTab('login');
+        document.getElementById('tab-register').onclick = () => showTab('register');
+
+        function showTab(tab) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const loginTab = document.getElementById('tab-login');
+            const registerTab = document.getElementById('tab-register');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                loginTab.classList.remove('active');
+                registerTab.classList.add('active');
+            }
+        }
+
+        // Login handler
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+
+            showLoading(true);
+            errorEl.textContent = '';
+
+            const result = await sharedAuth.login(email, password);
+
+            showLoading(false);
+
+            if (result.success) {
+                showNotification('Logged in successfully!', 'success');
+                hideAuthModal();
+            } else {
+                errorEl.textContent = result.error;
+            }
+        };
+
+        // Register handler
+        document.getElementById('register-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirm = document.getElementById('register-confirm').value;
+            const errorEl = document.getElementById('register-error');
+
+            errorEl.textContent = '';
+
+            if (password !== confirm) {
+                errorEl.textContent = 'Passwords do not match';
+                return;
+            }
+
+            showLoading(true);
+
+            const result = await sharedAuth.register(email, password, name);
+
+            showLoading(false);
+
+            if (result.success) {
+                showNotification('Account created successfully!', 'success');
+                showTab('login');
+                document.getElementById('register-form').reset();
+            } else {
+                errorEl.textContent = result.error;
+            }
+        };
+
+        // Logout handler
+        async function handleLogout() {
+            showLoading(true);
+            const result = await sharedAuth.logout();
+            showLoading(false);
+
+            if (result.success) {
+                showNotification('Logged out successfully', 'success');
+            }
+        }
+
+        // Close modal on outside click
+        document.getElementById('auth-modal').onclick = (e) => {
+            if (e.target.id === 'auth-modal') {
+                hideAuthModal();
+            }
+        };
+    </script>
+</body>
+</html>
